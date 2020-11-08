@@ -1,0 +1,52 @@
+---
+title: "dú3"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+library(tidyverse)
+library(ggpubr)
+sod3.data <- read_delim("https://raw.githubusercontent.com/PKvasnick/RTutorial/master/data/sod3_full.dat",
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+sod3.data
+gapdh.data <- read_delim("https://raw.githubusercontent.com/PKvasnick/RTutorial/master/data/gapdh_full.dat",
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+gapdh.data
+sod3.data$Cref <- gapdh.data$C
+sod3.data$LogRat <- log10(sod3.data$C / sod3.data$Cref)
+sod3.data
+ p <- ggboxplot(sod3.data, x = "Group", y = "LogRat",
+                color = "Group", palette =c("dodgerblue", "maroon", "chartreuse1"),
+                add = "jitter", shape = "Group")
+ p
+ my_comparisons <- list( c("KONTROLA", "7-NI"), c("7-NI", "L-NAME"), c("KONTROLA", "L-NAME") )
+p + stat_compare_means(comparisons = my_comparisons)+ # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 0.75)
+```
+__Využívali sme metódu one-way ANOVA__ 
+
+```{r}
+library(multcomp)
+data<-cholesterol
+data
+attach(cholesterol)
+aggregate(response,by=list(trt),FUN=mean)
+aggregate(response,by=list(trt),FUN=sd)
+fit <- aov(response~trt)
+detach(cholesterol)
+par(mar=c(2,4,6,2))
+tuk <- glht(fit,linfct=mcp(trt="Tukey"))
+labels1 <- cld(tuk, level=0.05)$mcletters$Letters
+labels2 <- paste(names(labels1), "\n", labels1)
+ggplot(data=fit$model, aes(x=trt, y=response)) +
+    scale_x_discrete(breaks=names(labels1), labels=labels2) +
+    geom_boxplot(fill="steelblue") +
+    theme_bw() +
+    labs(x="Treatment",
+         title="Distribution of Response Scores by Treatment",
+         subtitle="Groups without overlapping letters differ signifcantly (p < 0.05)")
+
+```
+
