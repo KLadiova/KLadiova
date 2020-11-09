@@ -1,0 +1,74 @@
+---
+title: "dú3"
+output:
+  pdf_document: default
+  html_document: default
+---
+*Prvá časť: dáta PCR* 
+
+```{r}
+library(dplyr)
+linearny_model <- aov(LogRat ~ Group, data = sod3.data)
+summary(linearny_model)
+```
+```{r}
+TukeyHSD(linearny_model)
+```
+
+```{r}
+library(gplots)
+par(las=2)
+par(mar=c(5,10,4,2))
+plot(TukeyHSD(linearny_model))
+```
+
+```{r}
+library(tidyverse)
+library(ggpubr)
+sod3.data <- read_delim("https://raw.githubusercontent.com/PKvasnick/RTutorial/master/data/sod3_full.dat",
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+sod3.data
+gapdh.data <- read_delim("https://raw.githubusercontent.com/PKvasnick/RTutorial/master/data/gapdh_full.dat",
+    "\t", escape_double = FALSE, trim_ws = TRUE)
+gapdh.data
+sod3.data$Cref <- gapdh.data$C
+sod3.data$LogRat <- log10(sod3.data$C / sod3.data$Cref)
+sod3.data
+ p <- ggboxplot(sod3.data, x = "Group", y = "LogRat",
+                color = "Group", palette =c("dodgerblue", "maroon", "chartreuse1"),
+                add = "jitter", shape = "Group")
+ p
+ my_comparisons <- list( c("KONTROLA", "7-NI"), c("7-NI", "L-NAME"), c("KONTROLA", "L-NAME") )
+p + stat_compare_means(comparisons = my_comparisons)+
+  stat_compare_means(label.y = 0.75)
+```
+Pre naše dáta som využila analýzu rozptylu one-way ANOVA. O celkovom rozdiele nám ale povedia post hoc testy, pričom najbežnejším je Tukeyho metóda s hladinou významnosti 0.05.Graf Tukeyho HSD testu je prvým z grafov. Taktiež sme s využitím balíka ggpubr vykreslili graf Kruskal-Wallisovho testu.
+
+*Druhá časť: dáta Cholesterol*
+
+```{r message=FALSE}
+library(multcomp)
+attach(cholesterol)
+head(cholesterol)
+chol <- aov(response ~ trt)
+summary(chol)
+```
+
+```{r}
+tukey <- glht(chol, linfct=mcp(trt="Tukey"))
+summary(tukey)
+par(las=2)
+par(mar=c(5,8,4,2))
+plot(TukeyHSD(chol))
+```
+
+```{r message=FALSE, warning = FALSE}
+lb_1 <- cld(tuk, level=0.05) $mcletters$Letters
+lb_2 <- paste(names(lb_1), "\n", lb_1)
+graf <- ggboxplot(cholesterol, x = "trt", y = "response", fill = "maroon")+
+    labs(x="Treatment (trt)", y="Response")+
+    theme_bw()+
+    scale_x_discrete (breaks=names(lb_1), labels=lb_2)
+graf
+```
+Aj v druhej časti som využila test one-way ANOVA, pokračovala som s Tukeyho testom, ku ktorému prislúcha aj  graf TukeyHSD. Posledný graf je vykreslený pomocou balíka ggpubr.
