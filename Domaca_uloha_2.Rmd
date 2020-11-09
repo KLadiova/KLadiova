@@ -1,0 +1,23 @@
+---
+title: "Dú2"
+output: html_document
+---
+```{r}
+library(dplyr)
+Neuro <- read_delim("https://raw.githubusercontent.com/PKvasnick/RTutorial/master/data/Neuro.csv", 
+                        ",", escape_double = TRUE, col_names = TRUE)
+analyza_1<-lm(Salary~Neuroticism, data=Neuro)
+summary(analyza_1)
+Neuro$Education = as.factor(Neuro$Education)
+analyza_2<-aov(Salary~Education-1, data=Neuro)
+summary(analyza_2)
+library(ggpubr)
+ggboxplot(Neuro, x = "Education", y = "Neuroticism", color = "Education", 
+          add = "jitter", legend = "none") +
+  rotate_x_text(angle = 45)+
+  stat_compare_means(method = "anova", label.y = 0.1)+        
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.") 
+plot(Neuro$Education, Neuro$Salary)
+```
+Na prvom grafe je vyobrazený vplyv vzdelania na neurotické problémy. Môžeme vidieť, že ľudia s vyšším vzdelaním sú ovplyvnení najviac, pričom ľudia s nižším vzdelaním majú najmenej neurotických problémov.
