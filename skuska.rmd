@@ -1,0 +1,147 @@
+---
+title: "Skuska"
+author: "Karolína Ládiová"
+date: "6 2 2021"
+output: html_document
+---
+  Zvolila som si dáta výskumu, ktorý sa týkal pacientov s melanómom oka, ktorí boli riešení stereotaktickou rádiochirurgiou (jednorazovou dávkou ionizujúceho žiarenia do ložiska). Súčasťou týchto dát je evidenčné číslo pacienta, jeho pohlavie, vek a objem nádoru.
+  Tu je zoznam knižníc, použitých v tomto .RMD súbore.
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(pastecs)
+library(psych)
+library(ggpubr)
+library(gt)
+library(glue)
+library(basicTrendline)
+```
+
+Po načítaní dát som rozdelila dáta podľa pohlavia. 
+
+```{r}
+Data = read.delim("https://raw.githubusercontent.com/KLadiova/KLadiova/main/data.csv", sep = ";")
+Data
+Data_muzi <- filter(Data, Pohlavie == "m")
+Data_zeny <- filter(Data, Pohlavie == "f")
+Data_muzi
+Vek_muzi <- as.numeric(unlist(Data_muzi["Vek"]))
+Vek_zeny <- as.numeric(unlist(Data_zeny["Vek"]))
+ObjemNadoru_muzi <- as.numeric(unlist(Data_muzi["Objem_nadoru"]))
+ObjemNadoru_zeny <- as.numeric(unlist(Data_zeny["Objem_nadoru"]))
+```
+
+Už pre rozdelené dáta mužov a žien som sa pokúsila o opisnú (deskriptívnu) štatistiku veku pacientov zúčastnených na výskume a tiež objemov ich nádorov.
+
+```{r}
+VekMuziStat <- data.frame(as.list(stat.desc(Vek_muzi)))
+VekZenyStat <- data.frame(as.list(stat.desc(Vek_zeny)))
+VekMuziStat
+VekZenyStat
+ObjemNadoruMuziStat <- data.frame(as.list(stat.desc(ObjemNadoru_muzi)))
+ObjemNadoruZenyStat <- data.frame(as.list(stat.desc(ObjemNadoru_zeny)))
+ObjemNadoruMuziStat
+ObjemNadoruZenyStat
+```
+```{r}
+VekMuziStat %>%
+  rename(
+    Number_of_elements = nbr.val,
+    Standard_Error = SE.mean,
+    Standard_Deviation = std.dev,
+    Sample_Variance = var
+    
+  )%>%
+   dplyr::select(-nbr.null,-nbr.na, -CI.mean.0.95
+, -coef.var) %>%
+ gt() %>%
+  tab_header(
+    title = "Vek Muzov Statistika"
+  ) %>%
+  fmt_number(
+    columns = vars(Number_of_elements,min,max,range,sum,median,mean,Standard_Error,Sample_Variance,Standard_Deviation)
+    
+  )
+
+VekZenyStat %>%
+  rename(
+    Number_of_elements = nbr.val,
+    Standard_Error = SE.mean,
+    Standard_Deviation = std.dev,
+    Sample_Variance = var
+    
+  )%>%
+   dplyr::select(-nbr.null,-nbr.na, -CI.mean.0.95
+, -coef.var) %>%
+ gt() %>%
+  tab_header(
+    title = "Vek Zien Statistika"
+  ) %>%
+  fmt_number(
+    columns = vars(Number_of_elements,min,max,range,sum,median,mean,Standard_Error,Sample_Variance,Standard_Deviation)
+    
+  )
+
+ObjemNadoruMuziStat %>%
+  rename(
+    Number_of_elements = nbr.val,
+    Standard_Error = SE.mean,
+    Standard_Deviation = std.dev,
+    Sample_Variance = var
+    
+  )%>%
+   dplyr::select(-nbr.null,-nbr.na, -CI.mean.0.95
+, -coef.var) %>%
+ gt() %>%
+  tab_header(
+    title = "Objem Nadoru Muzov Statistika"
+  ) %>%
+  fmt_number(
+    columns = vars(Number_of_elements,min,max,range,sum,median,mean,Standard_Error,Sample_Variance,Standard_Deviation)
+    
+  )
+
+ObjemNadoruZenyStat %>%
+  rename(
+    Number_of_elements = nbr.val,
+    Standard_Error = SE.mean,
+    Standard_Deviation = std.dev,
+    Sample_Variance = var
+    
+  )%>%
+   dplyr::select(-nbr.null,-nbr.na, -CI.mean.0.95
+, -coef.var) %>%
+ gt() %>%
+  tab_header(
+    title = "Objem Nadoru Zien Statistika"
+  ) %>%
+  fmt_number(
+    columns = vars(Number_of_elements,min,max,range,sum,median,mean,Standard_Error,Sample_Variance,Standard_Deviation)
+    
+  )
+```
+
+Následne som vytvorila graf závislosti objemu nádoru od veku a to osobitne pre závislosť u mužov a osobitne pre závislosť u žien. 
+
+```{r}
+trendline(Data_muzi$Vek,Data_muzi$Objem_nadoru,model="line2P",linecolor="blue",xlab="Vek",ylab="Objem_nadoru")
+
+trendline(Data_zeny$Vek,Data_zeny$Objem_nadoru,model="line2P",linecolor="red",xlab="Vek",ylab="Objem_nadoru")
+```
+
+Ako môžeme vidieť dáta spolu v oboch prípadoch korelujú.
+
+
+Nakoniec som spravila t-test, pričom nulovou hypotézou je porovnanie závislosti objemu nádoru od pohlavia.
+
+```{r}
+df1 <- Data %>%
+  select(Objem_nadoru, Pohlavie) %>%
+  filter(Pohlavie == "m" |
+         Pohlavie == "f")
+```
+```{r}
+t.test(data=df1, Objem_nadoru ~ Pohlavie)
+```
+Ako môžeme vidieť, t- test potvrdil hypotézu, nakoľko hodnota p> 0,05. Objem nádoru u mužov je väčší ako u žien, čo sa nám ukázalo aj pri priemerných hodnotách objemov.
+
